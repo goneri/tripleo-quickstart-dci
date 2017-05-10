@@ -31,9 +31,14 @@ repos:
   - type: file
     filename: dci_repo.repo
     down_url: 'http://{{ jumpbox_ip }}/dci_repo/dci_repo.repo'
-repo_cmd_after: |
+repo_cmd_before: |
+  subscription-manager unregister || true
+  subscription-manager register --username {{ rhsm_login }} --password {{ rhsm_password }}
+  subscription-manager attach --pool 8a85f981568e999d01568ed222cd6712
+  subscription-manager repos '--disable=*' --enable=rhel-7-server-rpms --enable=rhel-7-server-optional-rpms --enable=rhel-7-server-extras-rpms
   yum clean all
-  if ! [[ $(hostname) == "undercloud" ]];then
+  . /etc/sysconfig/network
+  if ! [[ $(HOSTNAME) == "undercloud" ]];then
     yum -y remove rhosp-director-images.noarch
     yum -y install rhosp-director-images.noarch
     md5sum /usr/share/rhosp-director-images/overcloud-full.tar > /usr/share/rhosp-director-images/overcloud-full.tar.md5
