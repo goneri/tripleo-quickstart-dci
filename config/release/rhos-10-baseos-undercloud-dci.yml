@@ -2,7 +2,7 @@
 release: newton
 osp_release: rhos-10
 
-undercloud_image_url: http://jumpbox.local/rhel-guest-image-7.3-35.x86_64.qcow2
+undercloud_image_url: 'http://{{ jumpbox_ip }}/rhel-guest-image-7.3-35.x86_64.qcow2'
 overcloud_image_url: file:///usr/share/rhosp-director-images/overcloud-full.tar
 ipa_image_url: file:///usr/share/rhosp-director-images/ironic-python-agent.tar
 
@@ -30,7 +30,7 @@ inject_images:
 repos:
   - type: file
     filename: dci_repo.repo
-    down_url: http://jumpbox.local/dci_repo/dci_repo.repo
+    down_url: 'http://{{ jumpbox_ip }}/dci_repo/dci_repo.repo'
 repo_cmd_after: |
   yum clean all
   if ! [[ $(hostname) == "undercloud" ]];then
