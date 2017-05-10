@@ -37,8 +37,10 @@ repo_cmd_before: |
   subscription-manager attach --pool 8a85f981568e999d01568ed222cd6712
   subscription-manager repos '--disable=*' --enable=rhel-7-server-rpms --enable=rhel-7-server-optional-rpms --enable=rhel-7-server-extras-rpms
   yum clean all
+  # fix the hostname of the undercloud
   . /etc/sysconfig/network
-  if ! [[ $(HOSTNAME) == "undercloud" ]];then
+  hostnamectl set-hostname $HOSTNAME
+  if ! [[ $(hostname) == "undercloud" ]];then
     yum -y remove rhosp-director-images.noarch
     yum -y install rhosp-director-images.noarch
     md5sum /usr/share/rhosp-director-images/overcloud-full.tar > /usr/share/rhosp-director-images/overcloud-full.tar.md5
