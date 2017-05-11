@@ -205,11 +205,9 @@
 - name: run tripleo-quickstart
   hosts: jumpbox
   tasks:
-    - shell: |
-        . /etc/dci-ansible-agent/dcirc.sh
-        /usr/bin/ansible-playbook -vv /usr/share/dci-ansible-agent/dci-ansible-agent.yml -e @/etc/dci-ansible-agent/settings.yml 2>&1|tee /var/lib/dci-ansible-agent/tripleo-quickstart.log
-      args:
-        chdir: /usr/share/dci-ansible-agent
+    - name: start the dci-ansible-agent systemd unit
+      systemd:
+        name: dci-ansible-agent
+        state: started
+        no_block: yes
       become: yes
-      become_user: dci-ansible-agent
-
