@@ -33,3 +33,29 @@ Finally you can start the deployment:
 ```
 ansible-playbook -i hosts -e rhsm_login=XXXX -e rhsm_password=XXXX bootstrap.yml
 ```
+
+## Workflow
+
+The playbook will do the following steps:
+
+- bootstrap.yml playbook
+  - prepare the jumpbox and virthost virtual machines
+  - deploy the dci-ansible-agent
+  - prepare the configuration for dci-ansible-agent
+  - fetch the last version of quickstart.sh
+  - push an up to date copy of tripleo-environments
+  - start the dci-ansible-agent agent
+  - dci-ansible-agent
+    - request a new DCI job to the DCI Control Server
+    - fetch the RHOSP or RDO repository to validate
+    - expose the repository on an internal HTTP server
+    - call quickstart.sh with a special requirement file
+    - quickstart.sh from TripleO-Quickstart
+      - use to requirement to:
+        - fetch the last version of rhos-10-baseos-undercloud-dci.yml
+        - use the local copy of tripleo-environents
+      - deploy an openstack
+    - run the DCI tests
+      - collect-logs
+      - validate-tempest
+      - certification
