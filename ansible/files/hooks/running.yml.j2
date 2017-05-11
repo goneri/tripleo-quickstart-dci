@@ -1,0 +1,6 @@
+---
+- shell: |
+    set -o pipefail
+    bash quickstart.sh --release rhos-10-baseos-undercloud-dci --requirements /var/lib/dci-ansible-agent/internal-requirements.txt --teardown all --tags all  -e jumpbox_ip={{ jumpbox_info.server.private_v4 }} -e rhsm_login={{ rhsm_login }} -e rhsm_password={{ rhsm_password }} {{ virthost_info.server.private_v4 }} 2>&1|tee /var/lib/dci-ansible-agent/run.log
+  args:
+    chdir: '/var/lib/dci-ansible-agent'

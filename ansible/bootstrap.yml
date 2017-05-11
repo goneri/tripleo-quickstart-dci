@@ -1,0 +1,215 @@
+---
+- name: launch the jumpbox
+  hosts: localhost
+  tasks:
+    - os_security_group:
+        state: present
+        name: ssh
+    - os_security_group_rule:
+        protocol: tcp
+        security_group: ssh
+        port_range_min: 22
+        port_range_max: 22
+        remote_ip_prefix: 0.0.0.0/0
+    - os_security_group:
+        state: present
+        name: http_in_tenant
+    - os_security_group_rule:
+        protocol: tcp
+        security_group: http_in_tenant
+        port_range_min: 80
+        port_range_max: 80
+        remote_group: http_in_tenant
+    - name: launch the jumpbox
+      os_server:
+        state: present
+        name: jumpbox
+        image: RHEL 7.3-35
+        key_name: goneri
+        timeout: 200
+        flavor: m1.small
+        floating_ips:
+          - '{{ hostvars.jumpbox.ansible_ssh_host }}'
+        volume_size: 20
+        security_groups: ['ssh', 'http_in_tenant']
+      register: jumpbox_info
+    - name: create the DCI volume
+      os_volume:
+        state: present
+        size: 50
+        display_name: dci-data
+    - name: attach volume to jumpbox
+      os_server_volume:
+        state: present
+        server: jumpbox
+        volume: dci-data
+        device: /dev/vdb
+
+    - name: launch the hypervisor node
+      os_server:
+        state: present
+        name: virthost
+        image: RHEL 7.3-35
+        key_name: goneri
+        timeout: 200
+        flavor: m1.xlarge
+        floating_ips:
+          - '{{ hostvars.virthost.ansible_ssh_host }}'
+        volume_size: 200
+        security_groups: ['ssh', 'http_in_tenant']
+      register: virthost_info
+    - name: Fetch rhel image
+      get_url:
+        url: http://download-node-02.eng.bos.redhat.com/brewroot/packages/rhel-guest-image/7.3/35/images/rhel-guest-image-7.3-35.x86_64.qcow2
+        dest: ~/rhel-guest-image-7.3-35.x86_64.qcow2
+
+- name: fetch tripleo-environment
+  hosts: localhost
+  tasks:
+    - name: Cloning the repository
+      git:
+        repo: ssh://gleboude@code.engineering.redhat.com:22/tripleo-environments.git
+        dest: /tmp/tripleo-environments
+        version: master
+
+- name: register the nodes on RHSN
+  hosts: os_node
+  tasks:
+    - name: Check if the node is registered on the RHSM
+      command: subscription-manager status
+      register: rhsm_status
+      failed_when: false
+      become: True
+    - name: register the node on the RHSM
+      shell: |
+        subscription-manager register --username={{ rhsm_login }} --password={{ rhsm_password }}
+        subscription-manager attach --pool 8a85f981568e999d01568ed222cd6712
+        subscription-manager repos --disable=* --enable=rhel-7-server-rpms --enable=rhel-7-server-optional-rpms --enable=rhel-7-server-extras-rpms
+      become: True
+      when: rhsm_status|failed
+
+- name: prepare the jumpbox
+  hosts: jumpbox
+  tasks:
+    - name: install some extra packages
+      package:
+        name: '{{ item }}'
+      with_items:
+        - https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+        - https://packages.distributed-ci.io/dci-release.el7.noarch.rpm
+        - tmux
+        - git
+        - python-virtualenv
+        - vim
+        - dci-ansible-agent
+        - httpd
+      become: True
+    - name: restore the dci-ansible-agent home directory
+      mount:
+        path: /var/lib/dci-ansible-agent
+        src: /dev/vdb
+        fstype: xfs
+        opts: noatime
+        state: mounted
+      become: True
+
+- name: configure dci-ansible-agent
+  hosts: jumpbox
+  tasks:
+    - name: collect jumpbox details
+      os_server:
+        name: jumpbox
+        image: RHEL 7.3-35
+        flavor: m1.small
+      delegate_to: localhost
+      register: jumpbox_info
+    - name: collect virthost details 
+      os_server:
+        name: virthost
+        image: RHEL 7.3-35
+        flavor: m1.xlarge
+      delegate_to: localhost
+      register: virthost_info
+    - name: Generating RSA key for stack
+      user:
+        name: 'dci-ansible-agent'
+        generate_ssh_key: 'yes'
+      become: yes
+      become_user: dci-ansible-agent
+    - name: Fetch the current quickstart.sh
+      get_url:
+        url: https://raw.githubusercontent.com/openstack/tripleo-quickstart/master/quickstart.sh
+        dest: /var/lib/dci-ansible-agent/quickstart.sh
+      become: yes
+      become_user: dci-ansible-agent
+    - file:
+        name: /var/lib/dci-ansible-agent/repos
+        state: directory
+      become: yes
+      become_user: dci-ansible-agent
+    - synchronize:
+        src: /tmp/tripleo-environments
+        dest: /var/lib/dci-ansible-agent/repos
+      become: yes
+      become_user: dci-ansible-agent
+    - copy:
+        src: hooks/teardown.yml
+        dest: /etc/dci-ansible-agent/hooks/teardown.yml
+      become: yes
+    - template:
+        src: files/hooks/running.yml.j2
+        dest: /etc/dci-ansible-agent/hooks/running.yml
+      become: yes
+    - copy:
+        src: dcirc.sh
+        dest: /etc/dci-ansible-agent/dcirc.sh
+      become: yes
+    - copy:
+        src: ~/rhel-guest-image-7.3-35.x86_64.qcow2
+        dest: /var/lib/dci-ansible-agent/rhel-guest-image-7.3-35.x86_64.qcow2
+      become: yes
+      become_user: dci-ansible-agent
+    - copy:
+        remote_src: True
+        src: /var/lib/dci-ansible-agent/rhel-guest-image-7.3-35.x86_64.qcow2
+        dest: /var/www/html/rhel-guest-image-7.3-35.x86_64.qcow2
+      become: yes
+    - copy:
+        src: internal-requirements.txt
+        dest: /var/lib/dci-ansible-agent/internal-requirements.txt
+      become: yes
+      become_user: dci-ansible-agent
+    - command: bash quickstart.sh --install-deps
+      args:
+        chdir: /var/lib/dci-ansible-agent
+      become: yes
+      become_user: dci-ansible-agent
+
+- name: configure the virthost
+  hosts: virthost
+  tasks:
+    - name:  Set authorized key of cloud-user@virthost (1/2)
+      slurp:
+        src: /var/lib/dci-ansible-agent/.ssh/id_rsa.pub
+      register: id_rsa_pub
+      delegate_to: jumpbox
+      become: yes
+      become_user: dci-ansible-agent
+    - name: Set authorized key of cloud-user@virthost (2/2)
+      authorized_key:
+        user: root
+        state: present
+        key: "{{ id_rsa_pub.content | b64decode }}"
+      become: yes
+
+- name: run tripleo-quickstart
+  hosts: jumpbox
+  tasks:
+    - shell: |
+        . /etc/dci-ansible-agent/dcirc.sh
+        /usr/bin/ansible-playbook -vv /usr/share/dci-ansible-agent/dci-ansible-agent.yml -e @/etc/dci-ansible-agent/settings.yml 2>&1|tee /var/lib/dci-ansible-agent/tripleo-quickstart.log
+      args:
+        chdir: /usr/share/dci-ansible-agent
+      become: yes
+      become_user: dci-ansible-agent
+
