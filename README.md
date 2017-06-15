@@ -22,6 +22,8 @@ Load the OpenStack openrc:
 source ~/openrc.sh
 ```
 
+:warning: If you may need  to use a KeyStone v2 OpenRC file.
+
 Adjust the public IP of the jumpbox and the virthost in the hosts file. The
 IP addresses should come from your tenant floating IP pool:
 

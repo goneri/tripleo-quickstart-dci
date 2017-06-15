@@ -1,3 +1,2 @@
 [os_node]
 jumpbox ansible_ssh_host=38.145.32.185 ansible_ssh_port=22 ansible_ssh_user=cloud-user ansible_ssh_common_args="-o ConnectionAttempts=50"
-virthost ansible_ssh_host=38.145.32.191 ansible_ssh_port=22 ansible_ssh_user=cloud-user ansible_ssh_common_args="-o ConnectionAttempts=50"

@@ -32,6 +32,7 @@
           - '{{ hostvars.jumpbox.ansible_ssh_host }}'
         volume_size: 20
         security_groups: ['ssh', 'http_in_tenant']
+        network: private
       register: jumpbox_info
     - name: create the DCI volume
       os_volume:
@@ -45,19 +46,6 @@
         volume: dci-data
         device: /dev/vdb
 
-    - name: launch the hypervisor node
-      os_server:
-        state: present
-        name: virthost
-        image: RHEL 7.3-35
-        key_name: goneri
-        timeout: 200
-        flavor: m1.xlarge
-        floating_ips:
-          - '{{ hostvars.virthost.ansible_ssh_host }}'
-        volume_size: 200
-        security_groups: ['ssh', 'http_in_tenant']
-      register: virthost_info
     - name: Fetch rhel image
       get_url:
         url: http://download-node-02.eng.bos.redhat.com/brewroot/packages/rhel-guest-image/7.3/35/images/rhel-guest-image-7.3-35.x86_64.qcow2
@@ -123,13 +111,6 @@
         flavor: m1.small
       delegate_to: localhost
       register: jumpbox_info
-    - name: collect virthost details 
-      os_server:
-        name: virthost
-        image: RHEL 7.3-35
-        flavor: m1.xlarge
-      delegate_to: localhost
-      register: virthost_info
     - name: Generating RSA key for stack
       user:
         name: 'dci-ansible-agent'
@@ -157,11 +138,15 @@
         dest: /etc/dci-ansible-agent/hooks/teardown.yml
       become: yes
     - template:
+        src: settings.j2
+        dest: /etc/dci-ansible-agent/settings.yml
+      become: yes
+    - template:
         src: files/hooks/running.yml.j2
         dest: /etc/dci-ansible-agent/hooks/running.yml
       become: yes
-    - copy:
-        src: dcirc.sh
+    - template:
+        src: dcirc.j2
         dest: /etc/dci-ansible-agent/dcirc.sh
       become: yes
     - copy:
@@ -174,9 +159,14 @@
         src: /var/lib/dci-ansible-agent/rhel-guest-image-7.3-35.x86_64.qcow2
         dest: /var/www/html/rhel-guest-image-7.3-35.x86_64.qcow2
       become: yes
+    - template:
+        src: openrc.j2
+        dest: /var/lib/dci-ansible-agent/openrc.sh
+      become: yes
+      become_user: dci-ansible-agent
     - copy:
-        src: internal-requirements.txt
-        dest: /var/lib/dci-ansible-agent/internal-requirements.txt
+        src: 'internal-requirements.txt'
+        dest: '/var/lib/dci-ansible-agent/internal-requirements.txt'
       become: yes
       become_user: dci-ansible-agent
     - command: bash quickstart.sh --install-deps
@@ -184,23 +174,12 @@
         chdir: /var/lib/dci-ansible-agent
       become: yes
       become_user: dci-ansible-agent
-
-- name: configure the virthost
-  hosts: virthost
-  tasks:
-    - name:  Set authorized key of cloud-user@virthost (1/2)
-      slurp:
-        src: /var/lib/dci-ansible-agent/.ssh/id_rsa.pub
-      register: id_rsa_pub
-      delegate_to: jumpbox
+    - command: bash quickstart.sh --requirements /var/lib/dci-ansible-agent/internal-requirements.txt
+      args:
+        chdir: /var/lib/dci-ansible-agent
       become: yes
       become_user: dci-ansible-agent
-    - name: Set authorized key of cloud-user@virthost (2/2)
-      authorized_key:
-        user: root
-        state: present
-        key: "{{ id_rsa_pub.content | b64decode }}"
-      become: yes
+      failed_when: False
 
 - name: run tripleo-quickstart
   hosts: jumpbox

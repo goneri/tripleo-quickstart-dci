@@ -1,6 +1,18 @@
 ---
 - shell: |
     set -o pipefail
-    bash quickstart.sh --release rhos-10-baseos-undercloud-dci --requirements /var/lib/dci-ansible-agent/internal-requirements.txt --teardown all --tags all  -e jumpbox_ip={{ jumpbox_info.server.private_v4 }} -e rhsm_login={{ rhsm_login }} -e rhsm_password={{ rhsm_password }} {{ virthost_info.server.private_v4 }} 2>&1|tee /var/lib/dci-ansible-agent/run.log
+    . /var/lib/dci-ansible-agent/openrc.sh
+    OPT_ADDITIONAL_PARAMETERS="-e @/etc/dci-ansible-agent/settings.yml" bash /var/lib/dci-ansible-agent/.quickstart/tripleo-quickstart/devmode.sh --release rhos-10-baseos-undercloud-dci --no-gate --ovb -d 2>&1|tee /var/lib/dci-ansible-agent/run.log
   args:
     chdir: '/var/lib/dci-ansible-agent'
+- name: install Python shade module
+  command: easy_install shade
+- os_server_facts:
+    server: '*undercloud*'
+    auth:
+      auth_url: "{{ lookup('env', 'OS_AUTH_URL') }}"
+      username: "{{ lookup('env', 'OS_USERNAME') }}"
+      password: "{{ lookup('env', 'OS_PASSWORD') }}"
+      project_name: "{{ lookup('env', 'OS_TENANT_ID') }}"
+  register: undercloud_facts
+- debug: var=undercloud_facts

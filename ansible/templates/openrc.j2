@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+export OS_AUTH_URL="{{ lookup('env', 'OS_AUTH_URL') }}"
+export OS_TENANT_ID="{{ lookup('env', 'OS_TENANT_ID') }}"
+export OS_TENANT_NAME="{{ lookup('env', 'OS_TENANT_NAME') }}"
+
+# unsetting v3 items in case set
+unset OS_PROJECT_ID
+unset OS_PROJECT_NAME
+unset OS_USER_DOMAIN_NAME
+unset OS_INTERFACE
+
+export OS_USERNAME="{{ lookup('env', 'OS_USERNAME') }}"
+export OS_PASSWORD="{{ lookup('env', 'OS_PASSWORD') }}"
+export OS_REGION_NAME="regionOne"
+export OS_ENDPOINT_TYPE=publicURL
+export OS_IDENTITY_API_VERSION=2

@@ -1,0 +1,16 @@
+dci_topic: "OSP10"
+dci_login: "{{ lookup('env', 'DCI_LOGIN') }}"
+dci_password: "{{ lookup('env', 'DCI_PASSWORD') }}"
+
+dci_baseurl: "http://{{ hostvars.jumpbox.ansible_ssh_host }}"
+dci_remoteci: "{{ lookup('env', 'DCI_REMOTECI') }}"
+undercloud_password: null
+dci_mirror_location: "/var/www/html"
+dci_config_dir: "/etc/dci-ansible-agent"
+dci_cache_dir: "/var/lib/dci-ansible-agent"
+
+latest_guest_image:
+  'rhos-10': 'RHEL 7.3-35'
+
+rhsm_login: "{{ rhsm_login }}"
+rhsm_password: "{{ rhsm_password }}"
