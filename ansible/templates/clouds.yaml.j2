@@ -1,0 +1,8 @@
+clouds:
+  local:
+    auth:
+      auth_url: "{{ lookup('env', 'OS_AUTH_URL') }}"
+      username: "{{ lookup('env', 'OS_USERNAME') }}"
+      password: "{{ lookup('env', 'OS_PASSWORD') }}"
+      project_name: "{{ lookup('env', 'OS_TENANT_NAME') }}"
+    region_name: regionOne

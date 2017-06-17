@@ -33,7 +33,6 @@
         volume_size: 20
         security_groups: ['ssh', 'http_in_tenant']
         network: private
-      register: jumpbox_info
     - name: create the DCI volume
       os_volume:
         state: present
@@ -82,6 +81,7 @@
     - name: install some extra packages
       package:
         name: '{{ item }}'
+        state: present
       with_items:
         - https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
         - https://packages.distributed-ci.io/dci-release.el7.noarch.rpm
@@ -91,7 +91,19 @@
         - vim
         - dci-ansible-agent
         - httpd
+        - patch
       become: True
+    - block:
+      - name: Copy the rpm to validate
+        copy:
+          src: '{{ rpm_to_gate }}'
+          dest: '/tmp/{{ rpm_to_gate | basename }}'
+      - name: Install the rpm to validate
+        yum:
+          name: '/tmp/{{ rpm_to_gate | basename }}'
+          state: present
+        become: True
+      when: rpm_to_gate is defined and rpm_to_gate
     - name: restore the dci-ansible-agent home directory
       mount:
         path: /var/lib/dci-ansible-agent
@@ -104,51 +116,109 @@
 - name: configure dci-ansible-agent
   hosts: jumpbox
   tasks:
-    - name: collect jumpbox details
-      os_server:
-        name: jumpbox
-        image: RHEL 7.3-35
-        flavor: m1.small
-      delegate_to: localhost
-      register: jumpbox_info
-    - name: Generating RSA key for stack
+    - name: Generating RSA keys for dci-ansible-agent
       user:
         name: 'dci-ansible-agent'
         generate_ssh_key: 'yes'
       become: yes
       become_user: dci-ansible-agent
+    - copy:
+        remote_src: True
+        src: /var/lib/dci-ansible-agent/.ssh/id_rsa.pub
+        dest: /var/lib/dci-ansible-agent/.ssh/authorized_keys
+        mode: 0644
+      become: yes
+      become_user: dci-ansible-agent
+    - file:
+        path: /var/lib/dci-ansible-agent/.ssh/config
+        owner: dci-ansible-agent
+        group: dci-ansible-agent
+        mode: '0644'
+        state: touch
+      become: yes
+      become_user: dci-ansible-agent
+    - user:
+        name: stack
+        comment: "TripleO QuickStart jumpbox stack user"
+      become: yes
+    - name: Create the ~stack/.ssh file
+      file:
+        path: /home/stack/.ssh
+        owner: stack
+        group: stack
+        mode: '0700'
+        state: directory
+      become: yes
+    - name: Reuse dci-ansible-agent ssh key
+      copy:
+        remote_src: True
+        src: '/var/lib/dci-ansible-agent/.ssh/{{ item.name }}'
+        dest: '/home/stack/.ssh/{{ item.name }}'
+        mode: '{{ item.mode }}'
+        owner: stack
+        group: stack
+      become: yes
+      with_items:
+        - { name: id_rsa, mode: '0600'}
+        - { name: id_rsa.pub, mode: '0644'}
+        - { name: authorized_keys, mode: '0644'}
+        - { name: config, mode: '0644'}
+    - copy:
+        remote_src: True
+        src: /home/stack/.ssh/id_rsa.pub
+        dest: /home/stack/.ssh/authorized_keys
+        mode: 0644
+      become: yes
+      become_user: stack
     - name: Fetch the current quickstart.sh
       get_url:
         url: https://raw.githubusercontent.com/openstack/tripleo-quickstart/master/quickstart.sh
-        dest: /var/lib/dci-ansible-agent/quickstart.sh
+        dest: /home/stack/quickstart.sh
+        mode: 0644
       become: yes
-      become_user: dci-ansible-agent
+      become_user: stack
     - file:
         name: /var/lib/dci-ansible-agent/repos
         state: directory
       become: yes
-      become_user: dci-ansible-agent
+      become_user: stack
     - synchronize:
         src: /tmp/tripleo-environments
         dest: /var/lib/dci-ansible-agent/repos
       become: yes
-      become_user: dci-ansible-agent
-    - copy:
-        src: hooks/teardown.yml
-        dest: /etc/dci-ansible-agent/hooks/teardown.yml
-      become: yes
+      become_user: stack
     - template:
         src: settings.j2
         dest: /etc/dci-ansible-agent/settings.yml
       become: yes
-    - template:
-        src: files/hooks/running.yml.j2
+    - name: install the hooks (1/2)
+      copy:
+        src: hooks/teardown.yml
+        dest: /etc/dci-ansible-agent/hooks/teardown.yml
+      become: yes
+    - name: install the hooks (2/2)
+      copy:
+        src: hooks/running.yml
         dest: /etc/dci-ansible-agent/hooks/running.yml
       become: yes
-    - template:
+    - name: create the dcirc.sh file
+      template:
         src: dcirc.j2
         dest: /etc/dci-ansible-agent/dcirc.sh
       become: yes
+    - file:
+        name: /etc/openstack
+        state: directory
+      become: yes
+    - template:
+        src: clouds.yaml.j2
+        dest: /etc/openstack/clouds.yaml
+      become: True
+    - template:
+        src: openrc.j2
+        dest: /home/stack/openrc.sh
+      become: yes
+      become_user: stack
     - copy:
         src: ~/rhel-guest-image-7.3-35.x86_64.qcow2
         dest: /var/lib/dci-ansible-agent/rhel-guest-image-7.3-35.x86_64.qcow2
@@ -159,26 +229,16 @@
         src: /var/lib/dci-ansible-agent/rhel-guest-image-7.3-35.x86_64.qcow2
         dest: /var/www/html/rhel-guest-image-7.3-35.x86_64.qcow2
       become: yes
-    - template:
-        src: openrc.j2
-        dest: /var/lib/dci-ansible-agent/openrc.sh
-      become: yes
-      become_user: dci-ansible-agent
     - copy:
         src: 'internal-requirements.txt'
         dest: '/var/lib/dci-ansible-agent/internal-requirements.txt'
       become: yes
       become_user: dci-ansible-agent
-    - command: bash quickstart.sh --install-deps
-      args:
-        chdir: /var/lib/dci-ansible-agent
+    - command: bash /home/stack/quickstart.sh --install-deps
       become: yes
-      become_user: dci-ansible-agent
     - command: bash quickstart.sh --requirements /var/lib/dci-ansible-agent/internal-requirements.txt
-      args:
-        chdir: /var/lib/dci-ansible-agent
       become: yes
-      become_user: dci-ansible-agent
+      become_user: stack
       failed_when: False
 
 - name: run tripleo-quickstart

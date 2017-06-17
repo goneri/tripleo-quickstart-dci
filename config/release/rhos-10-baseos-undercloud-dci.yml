@@ -7,7 +7,10 @@ overcloud_image_url: file:///usr/share/rhosp-director-images/overcloud-full.tar
 ipa_image_url: file:///usr/share/rhosp-director-images/ironic-python-agent.tar
 
 mtu: 1350
-mtu_interface: eth0
+mtu_interface:
+  - eth0
+  - eth1
+  - eth2
 
 images:
     - name: rhel
@@ -47,13 +50,18 @@ repo_cmd_after: |
   fi
 
 undercloud_ip_retries: 30
+enable_vbmc: true
 undercloud_setup: true
 virthost_repo_setup: true
 baseos_as_undercloud: true
 use_external_images: true
 download_overcloud_images: false
-ovb_setup_connectivity: false
+ovb_setup_connectivity: true
 non_root_user_setup: true
 package_installs: true
 hostname_correction: true
 selinux_enforcing: true
+step_introspect: false
+
+# TODO(Gonéri): the virt_power_key is not generated, I don't know why
+virt_power_key: "{{ local_working_dir }}/id_rsa_undercloud"

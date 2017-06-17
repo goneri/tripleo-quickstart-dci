@@ -61,3 +61,12 @@ The playbook will do the following steps:
       - collect-logs
       - validate-tempest
       - certification
+
+## Gating
+
+The `rpm_to_gate` parameter can be used to inject a local RPM on the jumpbox. In this case, it will be use
+instead of the RPM from the upstream repository:
+
+```bash
+ansible-playbook -i hosts -e rhsm_login=XXXX -e rhsm_password=XXXX bootstrap.yml -e rpm_to_gate=/tmp/dci-ansible.rpm
+```
