@@ -1,4 +1,4 @@
-dci_topic: "OSP10"
+dci_topic: "{{ dci_topic|default('OSP10') }}"
 dci_login: "{{ lookup('env', 'DCI_LOGIN') }}"
 dci_password: "{{ lookup('env', 'DCI_PASSWORD') }}"
 
