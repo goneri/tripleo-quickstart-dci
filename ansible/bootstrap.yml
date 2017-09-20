@@ -30,7 +30,7 @@
         state: present
         name: jumpbox
         image: RHEL 7.3-35
-        key_name: goneri
+        key_name: "{{ lookup('env', 'USER')}}"
         timeout: 200
         flavor: m1.small
         floating_ips:
