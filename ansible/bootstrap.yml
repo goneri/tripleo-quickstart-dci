@@ -2,6 +2,11 @@
 - name: launch the jumpbox
   hosts: localhost
   tasks:
+    - assert:
+        that:
+          - "lookup('env', 'DCI_CLIENT_ID')"
+          - "lookup('env', 'DCI_API_SECRET')"
+        msg: "DCI_CLIENT_ID and DCI_API_SECRET must be defined"
     - os_security_group:
         state: present
         name: ssh
