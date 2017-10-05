@@ -67,18 +67,13 @@
 - name: register the nodes on RHSN
   hosts: os_node
   tasks:
-    - name: Check if the node is registered on the RHSM
-      command: subscription-manager status
-      register: rhsm_status
-      failed_when: false
-      become: True
     - name: register the node on the RHSM
       shell: |
+        subscription-manager unregister || true
         subscription-manager register --username={{ rhsm_login }} --password={{ rhsm_password }}
         subscription-manager attach --pool 8a85f981568e999d01568ed222cd6712
         subscription-manager repos --disable=* --enable=rhel-7-server-rpms --enable=rhel-7-server-optional-rpms --enable=rhel-7-server-extras-rpms
       become: True
-      when: rhsm_status|failed
 
 - name: prepare the jumpbox
   hosts: jumpbox
