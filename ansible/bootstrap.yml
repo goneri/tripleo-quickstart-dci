@@ -85,13 +85,6 @@
       with_items:
         - https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
         - https://packages.distributed-ci.io/dci-release.el7.noarch.rpm
-        - tmux
-        - git
-        - python-virtualenv
-        - vim
-        - dci-ansible-agent
-        - httpd
-        - patch
       become: True
     - block:
       - name: Copy the rpm to validate
@@ -104,6 +97,19 @@
           state: present
         become: True
       when: rpm_to_gate is defined and rpm_to_gate
+    - name: install some extra packages
+      package:
+        name: '{{ item }}'
+        state: present
+      with_items:
+        - tmux
+        - git
+        - python-virtualenv
+        - vim
+        - dci-ansible-agent
+        - httpd
+        - patch
+      become: True
     - name: restore the dci-ansible-agent home directory
       mount:
         path: /var/lib/dci-ansible-agent
