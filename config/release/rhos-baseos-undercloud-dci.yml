@@ -1,6 +1,6 @@
 # note: used in the context of image promotion pipeline only!
 release: newton
-osp_release: rhos-10
+osp_release: "{{ dci_topic | regex_replace('OSP(\\d\\d)$', 'rhos-\\1') }}"
 docker_registry_host: registry.distributed-ci.io
 containerized_overcloud: true
 undercloud_image_url: '{{ dci_baseurl }}/rhel-guest-image-8.3-35.x86_64.qcow2'
@@ -40,6 +40,23 @@ use_rhsm: true
 pool_id: 8a85f981568e999d01568ed222cd6712
 rhsm_username: "{{ rhsm_login }}"
 rhsm_password: "{{ rhsm_password }}"
+rhsm_repos:
+  - name: rhel-{{ rhel_version_number }}-server-rpms
+  - name: rhel-{{ rhel_version_number }}-server-extras-rpms
+  - name: rhel-{{ rhel_version_number }}-server-rh-common-rpms
+
+repo_cmd_before: |
+  subscription-manager remove --all || true
+  subscription-manager unregister || true
+  rm -Rf /etc/yum.repos.d/*.repo
+repo_cmd_after: |
+  rm -Rf /etc/yum.repos.d/delorean*
+  yum repolist
+  yum clean all
+  yum -y remove rhosp-director-images.noarch
+  yum -y install rhosp-director-images.noarch
+  md5sum /usr/share/rhosp-director-images/overcloud-full.tar > /usr/share/rhosp-director-images/overcloud-full.tar.md5
+  md5sum /usr/share/rhosp-director-images/ironic-python-agent.tar > /usr/share/rhosp-director-images/ironic-python-agent.tar.md5
 
 undercloud_ip_retries: 30
 enable_vbmc: true
