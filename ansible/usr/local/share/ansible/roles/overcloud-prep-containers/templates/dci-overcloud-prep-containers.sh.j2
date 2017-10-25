@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set -eux
+
+source stackrc
+docker login registry.distributed-ci.io -u "{{ lookup('env', 'DEST_REGISTRY_USER') }}" -p "{{ lookup('env', 'DEST_REGISTRY_PASSWORD') }}"
+curl -o/home/stack/overcloud_containers.yaml "{{ dci_baseurl }}/dci_repo/RH7-RHOS-12.0/container_images.yaml"
+openstack overcloud container image upload --verbose --config-file /home/stack/overcloud_containers.yaml

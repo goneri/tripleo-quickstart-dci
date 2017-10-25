@@ -74,3 +74,5 @@ step_introspect: false
 
 # TODO(Gonéri): the virt_power_key is not generated, I don't know why
 virt_power_key: "{{ local_working_dir }}/id_rsa_undercloud"
+# TODO only with OSP12
+overcloud_prep_containers_script: dci-overcloud-prep-containers.sh.j2
