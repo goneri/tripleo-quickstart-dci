@@ -225,11 +225,16 @@
         dest: /home/stack/openrc.sh
       become: yes
       become_user: stack
-    - copy:
-        src: ~/rhel-server-7.4-x86_64-kvm.qcow2
-        dest: /var/lib/dci-ansible-agent/rhel-server-7.4-x86_64-kvm.qcow2
+    - template:
+        src: dockerrc.j2
+        dest: /home/stack/dockerrc.sh
       become: yes
-      become_user: dci-ansible-agent
+      become_user: stack
+#    - copy:
+#        src: ~/rhel-server-7.4-x86_64-kvm.qcow2
+#        dest: /var/lib/dci-ansible-agent/rhel-server-7.4-x86_64-kvm.qcow2
+#      become: yes
+#      become_user: dci-ansible-agent
     - copy:
         remote_src: True
         src: /var/lib/dci-ansible-agent/rhel-server-7.4-x86_64-kvm.qcow2

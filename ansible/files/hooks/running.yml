@@ -7,6 +7,7 @@
 - shell: |
     set -o pipefail
     . /home/stack/openrc.sh
+    . /home/stack/dockerrc.sh
     OPT_ADDITIONAL_PARAMETERS="-e @/etc/dci-ansible-agent/settings.yml" bash /home/stack/.quickstart/tripleo-quickstart/devmode.sh --release rhos-baseos-undercloud-dci --no-gate --ovb -d 2>&1|tee /home/stack/run.log
   become: True
   become_user: stack
