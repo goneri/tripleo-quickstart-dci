@@ -3,7 +3,7 @@ release: newton
 osp_release: "{{ dci_topic | regex_replace('OSP(\\d\\d)$', 'rhos-\\1') }}"
 docker_registry_host: registry.distributed-ci.io
 containerized_overcloud: true
-undercloud_image_url: '{{ dci_baseurl }}/rhel-guest-image-8.3-35.x86_64.qcow2'
+undercloud_image_url: '{{ dci_baseurl }}/rhel-server-7.4-x86_64-kvm.qcow2'
 overcloud_image_url: file:///usr/share/rhosp-director-images/overcloud-full.tar
 ipa_image_url: file:///usr/share/rhosp-director-images/ironic-python-agent.tar
 
@@ -17,7 +17,7 @@ images:
     - name: rhel
       url: "{{ undercloud_image_url }}"
       type: qcow2
-      md5sum: "0bfff47b55a9428c83d2235da9d470de  rhel-guest-image-7.3-35.x86_64.qcow2"
+      md5sum: "feb1a599deb59ade97dc0935fbb24c8c  rhel-server-7.4-x86_64-kvm.qcow2"
     - name: overcloud-full
       url: "{{ overcloud_image_url }}"
       type: tar

@@ -226,14 +226,14 @@
       become: yes
       become_user: stack
     - copy:
-        src: ~/rhel-guest-image-7.3-35.x86_64.qcow2
-        dest: /var/lib/dci-ansible-agent/rhel-guest-image-7.3-35.x86_64.qcow2
+        src: ~/rhel-server-7.4-x86_64-kvm.qcow2
+        dest: /var/lib/dci-ansible-agent/rhel-server-7.4-x86_64-kvm.qcow2
       become: yes
       become_user: dci-ansible-agent
     - copy:
         remote_src: True
-        src: /var/lib/dci-ansible-agent/rhel-guest-image-7.3-35.x86_64.qcow2
-        dest: /var/www/html/rhel-guest-image-7.3-35.x86_64.qcow2
+        src: /var/lib/dci-ansible-agent/rhel-server-7.4-x86_64-kvm.qcow2
+        dest: /var/www/html/rhel-server-7.4-x86_64-kvm.qcow2
       become: yes
     - copy:
         src: 'internal-requirements.txt'
