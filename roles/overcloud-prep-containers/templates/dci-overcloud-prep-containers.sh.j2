@@ -6,3 +6,5 @@ source stackrc
 docker login registry.distributed-ci.io -u "{{ lookup('env', 'DEST_REGISTRY_USER') }}" -p "{{ lookup('env', 'DEST_REGISTRY_PASSWORD') }}"
 curl -o/home/stack/overcloud_containers.yaml "{{ dci_baseurl }}/dci_repo/RH7-RHOS-12.0/container_images.yaml"
 openstack overcloud container image upload --verbose --config-file /home/stack/overcloud_containers.yaml
+suffix=$(cat overcloud_containers.yaml|sed 's,.*rhosp12.*:\(.*\),\1,;tx;d;:x'|head -n1)
+openstack overcloud container image prepare --env-file ~/containers-default-parameters.yaml --namespace http://192.168.24.1:8787/rhosp12 --prefix openstack --suffix=${suffix}
