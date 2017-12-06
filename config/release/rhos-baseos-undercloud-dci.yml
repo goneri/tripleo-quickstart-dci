@@ -1,9 +1,9 @@
 # note: used in the context of image promotion pipeline only!
-release: newton
 osp_release: "{{ dci_topic | regex_replace('OSP(\\d\\d)$', 'rhos-\\1') }}"
-docker_registry_host: registry.distributed-ci.io
-containerized_overcloud: true
-undercloud_image_url: '{{ dci_baseurl }}/rhel-guest-image-8.3-35.x86_64.qcow2'
+containerized_overcloud: false
+#docker_registry_host: registry.distributed-ci.io
+#docker_registry_namespace: "{{ dci_topic | regex_replace('OSP(\\d\\d)$', 'rhosp\\1') }}"
+undercloud_image_url: '{{ dci_baseurl }}/rhel-guest-image.x86_64.qcow2'
 overcloud_image_url: file:///usr/share/rhosp-director-images/overcloud-full.tar
 ipa_image_url: file:///usr/share/rhosp-director-images/ironic-python-agent.tar
 
@@ -17,7 +17,7 @@ images:
     - name: rhel
       url: "{{ undercloud_image_url }}"
       type: qcow2
-      md5sum: "0bfff47b55a9428c83d2235da9d470de  rhel-guest-image-7.3-35.x86_64.qcow2"
+      md5sum: "0bfff47b55a9428c83d2235da9d470de  rhel-guest-image.x86_64.qcow2"
     - name: overcloud-full
       url: "{{ overcloud_image_url }}"
       type: tar
@@ -53,10 +53,12 @@ repo_cmd_after: |
   rm -Rf /etc/yum.repos.d/delorean*
   yum repolist
   yum clean all
-  yum -y remove rhosp-director-images.noarch
-  yum -y install rhosp-director-images.noarch
-  md5sum /usr/share/rhosp-director-images/overcloud-full.tar > /usr/share/rhosp-director-images/overcloud-full.tar.md5
-  md5sum /usr/share/rhosp-director-images/ironic-python-agent.tar > /usr/share/rhosp-director-images/ironic-python-agent.tar.md5
+  if [[ $(hostname) =~ 'undercloud' ]]; then
+    yum -y remove rhosp-director-images.noarch
+    yum -y install rhosp-director-images.noarch
+    md5sum /usr/share/rhosp-director-images/overcloud-full.tar > /usr/share/rhosp-director-images/overcloud-full.tar.md5
+    md5sum /usr/share/rhosp-director-images/ironic-python-agent.tar > /usr/share/rhosp-director-images/ironic-python-agent.tar.md5
+  fi
 
 undercloud_ip_retries: 30
 enable_vbmc: true
@@ -71,6 +73,4 @@ package_installs: true
 hostname_correction: true
 selinux_enforcing: true
 step_introspect: false
-
-# TODO(Gonéri): the virt_power_key is not generated, I don't know why
-virt_power_key: "{{ local_working_dir }}/id_rsa_undercloud"
+validate_ipmi_step: false

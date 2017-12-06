@@ -50,17 +50,12 @@
         volume: dci-data
         device: /dev/vdb
 
-    - name: Fetch rhel image
-      get_url:
-        url: http://download-node-02.eng.bos.redhat.com/brewroot/packages/rhel-guest-image/7.3/35/images/rhel-guest-image-7.3-35.x86_64.qcow2
-        dest: ~/rhel-guest-image-7.3-35.x86_64.qcow2
-
 - name: fetch tripleo-environment
   hosts: localhost
   tasks:
     - name: Cloning the repository
       git:
-        repo: ssh://gleboude@code.engineering.redhat.com:22/tripleo-environments.git
+        repo: ssh://code.engineering.redhat.com:22/tripleo-environments.git
         dest: /tmp/tripleo-environments
         version: master
 
@@ -128,71 +123,62 @@
         generate_ssh_key: 'yes'
       become: yes
       become_user: dci-ansible-agent
-    - copy:
-        remote_src: True
-        src: /var/lib/dci-ansible-agent/.ssh/id_rsa.pub
-        dest: /var/lib/dci-ansible-agent/.ssh/authorized_keys
-        mode: 0644
-      become: yes
-      become_user: dci-ansible-agent
-    - file:
-        path: /var/lib/dci-ansible-agent/.ssh/config
-        owner: dci-ansible-agent
-        group: dci-ansible-agent
-        mode: '0644'
-        state: touch
-      become: yes
-      become_user: dci-ansible-agent
-    - user:
-        name: stack
-        comment: "TripleO QuickStart jumpbox stack user"
-      become: yes
-    - name: Create the ~stack/.ssh file
+    - name: Create the user .ssh directory
       file:
-        path: /home/stack/.ssh
-        owner: stack
-        group: stack
+        path: '~{{ item }}/.ssh'
+        owner: '{{ item }}'
+        group:  '{{ item }}'
         mode: '0700'
         state: directory
       become: yes
+      with_items:
+        - cloud-user
+        - dci-ansible-agent
+    - name: Set the ~/.ssh/config file
+      copy:
+        src: ssh_config
+        dest: '~{{ item }}/.ssh/config'
+        owner: '{{ item }}'
+        group: '{{ item }}'
+        mode: '0644'
+      become: yes
+      with_items:
+        - cloud-user
+        - dci-ansible-agent
     - name: Reuse dci-ansible-agent ssh key
       copy:
         remote_src: True
-        src: '/var/lib/dci-ansible-agent/.ssh/{{ item.name }}'
-        dest: '/home/stack/.ssh/{{ item.name }}'
+        src: '~dci-ansible-agent/.ssh/{{ item.name }}'
+        dest: '~cloud-user/.ssh/{{ item.name }}'
         mode: '{{ item.mode }}'
-        owner: stack
-        group: stack
+        owner: cloud-user
+        group: cloud-user
       become: yes
       with_items:
         - { name: id_rsa, mode: '0600'}
         - { name: id_rsa.pub, mode: '0644'}
-        - { name: authorized_keys, mode: '0644'}
-        - { name: config, mode: '0644'}
-    - copy:
-        remote_src: True
-        src: /home/stack/.ssh/id_rsa.pub
-        dest: /home/stack/.ssh/authorized_keys
-        mode: 0644
+    - name: Ensure cloud-user can auth itself on localhost
+      shell: cat .ssh/id_rsa.pub >> ~/.ssh/authorized_keys
       become: yes
-      become_user: stack
+      become_user: cloud-user
     - name: Fetch the current quickstart.sh
       get_url:
         url: https://raw.githubusercontent.com/openstack/tripleo-quickstart/master/quickstart.sh
-        dest: /home/stack/quickstart.sh
+        dest: /home/cloud-user/quickstart.sh
         mode: 0644
       become: yes
-      become_user: stack
+      become_user: cloud-user
     - file:
         name: /var/lib/dci-ansible-agent/repos
+        owner: cloud-user
+        group: cloud-user
         state: directory
       become: yes
-      become_user: stack
     - synchronize:
         src: /tmp/tripleo-environments
         dest: /var/lib/dci-ansible-agent/repos
       become: yes
-      become_user: stack
+      become_user: dci-ansible-agent
     - template:
         src: settings.j2
         dest: /etc/dci-ansible-agent/settings.yml
@@ -222,30 +208,58 @@
       become: True
     - template:
         src: openrc.j2
-        dest: /home/stack/openrc.sh
+        dest: /home/cloud-user/openrc.sh
       become: yes
-      become_user: stack
-    - copy:
-        src: ~/rhel-guest-image-7.3-35.x86_64.qcow2
-        dest: /var/lib/dci-ansible-agent/rhel-guest-image-7.3-35.x86_64.qcow2
-      become: yes
-      become_user: dci-ansible-agent
-    - copy:
+      become_user: cloud-user
+    - stat:
+        path: /var/lib/dci-ansible-agent/rhel-guest-image.x86_64.qcow2
+      register: rhel_image_state
+    - name: Upload of rhel-guest-image.qcow2
+      shell: curl http://download-node-02.eng.bos.redhat.com/brewroot/packages/rhel-guest-image/7.3/35/images/rhel-guest-image-7.3-35.x86_64.qcow2 |ssh cloud-user@{{ hostvars.jumpbox.ansible_ssh_host }} 'cat > /home/cloud-user/rhel-guest-image.x86_64.qcow2'
+      when: not rhel_image_state.stat.exists
+      delegate_to: localhost
+    - name: Save the image in dci-ansible-agent user home
+      copy:
         remote_src: True
-        src: /var/lib/dci-ansible-agent/rhel-guest-image-7.3-35.x86_64.qcow2
-        dest: /var/www/html/rhel-guest-image-7.3-35.x86_64.qcow2
+        src: /home/cloud-user/rhel-guest-image.x86_64.qcow2
+        dest: /var/lib/dci-ansible-agent/rhel-guest-image.x86_64.qcow2
+      become: yes
+      when: not rhel_image_state.stat.exists
+    - name: Expose the image for the cluster nodes
+      copy:
+        remote_src: True
+        src: /var/lib/dci-ansible-agent/rhel-guest-image.x86_64.qcow2
+        dest: /var/www/html/rhel-guest-image.x86_64.qcow2
       become: yes
     - copy:
         src: 'internal-requirements.txt'
         dest: '/var/lib/dci-ansible-agent/internal-requirements.txt'
       become: yes
       become_user: dci-ansible-agent
-    - command: bash /home/stack/quickstart.sh --install-deps
+    - command: bash /home/cloud-user/quickstart.sh --install-deps
       become: yes
     - command: bash quickstart.sh --requirements /var/lib/dci-ansible-agent/internal-requirements.txt
       become: yes
-      become_user: stack
+      become_user: cloud-user
       failed_when: False
+
+- name: extra settings to make he environment more friendly
+  hosts: jumpbox
+  tasks:
+    - name: Install the motd
+      copy:
+        src: motd
+        dest: /etc/motd
+      become: yes
+    - name: Install the bash_history
+      copy:
+        src: bash_history
+        dest: /home/cloud-user/.bash_history
+        owner: cloud-user
+        group: cloud-user
+        mode: '0700'
+      become: yes
+
 
 - name: run tripleo-quickstart
   hosts: jumpbox
@@ -256,3 +270,6 @@
         state: started
         no_block: yes
       become: yes
+
+    - debug:
+        msg: "You can now connect to your jumpbox with: ssh cloud-user@{{ hostvars.jumpbox.ansible_ssh_host }}"

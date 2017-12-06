@@ -1,0 +1,4 @@
+tail -f /home/cloud-user/run.log
+sudo journalctl -ef -u dci-ansible-agent
+ssh -F /home/cloud-user/.quickstart/ssh.config.local.ansible undercloud
+ssh -F /home/cloud-user/.quickstart/ssh.config.local.ansible undercloud-root

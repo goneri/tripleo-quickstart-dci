@@ -1,5 +1,4 @@
+# Until https://review.openstack.org/#/c/526431/ is merged
+git+https://github.com/goneri/tripleo-quickstart-dci/#egg=tripleo-quickstart-dci
 # This is required for internal RHOSP deployments of TripleO when using TripleO Quickstart
 git+https://git.openstack.org/openstack/tripleo-quickstart/#egg=tripleo-quickstart
-git+https://git.openstack.org/openstack/tripleo-quickstart-extras/#egg=tripleo-quickstart-extras
-git+https://github.com/goneri/tripleo-quickstart-dci/#egg=tripleo-quickstart-dci
-/var/lib/dci-ansible-agent/repos/tripleo-environments

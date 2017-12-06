@@ -1,0 +1,20 @@
+Welcome on the TripleO-QuickStart-DCI jumpbox
+---------------------------------------------
+
+To follow the ongoing deployment:
+
+  $ tail -f /home/cloud-user/run.log
+
+To follow the agent:
+
+  $ sudo journalctl -ef -u dci-ansible-agent
+
+To connect to the undercloud node:
+
+  $ ssh -F /home/cloud-user/.quickstart/ssh.config.local.ansible undercloud
+
+Or as root:
+
+  $ ssh -F /home/cloud-user/.quickstart/ssh.config.local.ansible undercloud-root
+
+.oO(Have fun!)Oo.

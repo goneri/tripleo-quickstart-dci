@@ -2,6 +2,12 @@
 
 This is an example of an integration of Distributed-CI and TripleO-Quickstart.
 
+## Requirements
+
+- to be on Red Hat VPN.
+- RDO-Cloud openrc file should be sourced first
+- in ansible/hosts, the jumpbox should have a floating IP from the user tenant
+
 ## Usage
 
 

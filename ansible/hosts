@@ -1,2 +1,4 @@
 [os_node]
+# here, replace the ansible_ssh_host value with a floating IP from
+# your tenant
 jumpbox ansible_ssh_host=38.145.32.185 ansible_ssh_port=22 ansible_ssh_user=cloud-user ansible_ssh_common_args="-o ConnectionAttempts=50"

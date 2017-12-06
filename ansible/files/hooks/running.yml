@@ -1,15 +1,11 @@
 ---
-- name: Apply a work around for https://github.com/ansible/ansible/issues/30620
-  user:
-    name: 'dci-ansible-agent'
-    shell: /bin/bash
-  become: True
 - shell: |
     set -o pipefail
-    . /home/stack/openrc.sh
-    OPT_ADDITIONAL_PARAMETERS="-e @/etc/dci-ansible-agent/settings.yml" bash /home/stack/.quickstart/tripleo-quickstart/devmode.sh --release rhos-baseos-undercloud-dci --no-gate --ovb -d 2>&1|tee /home/stack/run.log
+    . /home/cloud-user/openrc.sh
+    cd /home/cloud-user
+    bash quickstart.sh --bootstrap --working-dir /home/cloud-user/.quickstart/ --tags all --config /home/cloud-user/.quickstart/config/general_config/ovb-minimal-pacemaker-public-bond.yml --environment /home/cloud-user/.quickstart/config/environments/rdocloud.yml --extra-vars cleanup_stacks_keypairs=true --playbook baremetal-full-deploy.yml --release rhos-baseos-undercloud-dci -e @/home/cloud-user/.quickstart/config/release/rhos-baseos-undercloud-dci.yml -e @/etc/dci-ansible-agent/settings.yml localhost 2>&1|tee /home/cloud-user/run.log
   become: True
-  become_user: stack
+  become_user: cloud-user
 - name: install Python shade module
   command: easy_install shade
   become: True
@@ -22,7 +18,7 @@
     name: "undercloud"
     groups: "undercloud"
     ansible_fqdn: "{{ undercloud_ip }}"
-    ansible_user: "stack"
+    ansible_user: "cloud-user"
     ansible_host: "{{ undercloud_ip }}"
 - name: Create stack@undercloud SSH key
   user:
