@@ -105,6 +105,12 @@
         - httpd
         - patch
       become: True
+    - name: make a filesystem on /dev/vdb if there's none
+      filesystem:
+        fstype: xfs
+        dev: /dev/vdb
+        force: no
+      become: True
     - name: restore the dci-ansible-agent home directory
       mount:
         path: /var/lib/dci-ansible-agent
