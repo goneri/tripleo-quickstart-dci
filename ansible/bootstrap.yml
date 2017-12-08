@@ -73,6 +73,20 @@
 - name: prepare the jumpbox
   hosts: jumpbox
   tasks:
+    - name: make a filesystem on /dev/vdb if there's none
+      filesystem:
+        fstype: xfs
+        dev: /dev/vdb
+        force: no
+      become: True
+    - name: restore the dci-ansible-agent home directory
+      mount:
+        path: /var/lib/dci-ansible-agent
+        src: /dev/vdb
+        fstype: xfs
+        opts: noatime
+        state: mounted
+      become: True
     - name: install some extra packages
       package:
         name: '{{ item }}'
@@ -104,20 +118,6 @@
         - dci-ansible-agent
         - httpd
         - patch
-      become: True
-    - name: make a filesystem on /dev/vdb if there's none
-      filesystem:
-        fstype: xfs
-        dev: /dev/vdb
-        force: no
-      become: True
-    - name: restore the dci-ansible-agent home directory
-      mount:
-        path: /var/lib/dci-ansible-agent
-        src: /dev/vdb
-        fstype: xfs
-        opts: noatime
-        state: mounted
       become: True
 
 - name: configure dci-ansible-agent
