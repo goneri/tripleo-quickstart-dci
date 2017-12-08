@@ -59,14 +59,22 @@
         dest: /tmp/tripleo-environments
         version: master
 
-- name: register the nodes on RHSN
+- name: register the node on RHSM
   hosts: os_node
   tasks:
-    - name: register the node on the RHSM
+    - name: unregister the node from the RHSM if it was
+      redhat_subscription:
+        state: absent
+      become: True
+    - name:  register the node on the RHSM
+      redhat_subscription:
+        state: present
+        username: '{{ rhsm_login }}'
+        password: '{{ rhsm_password }}'
+        pool: '^Employee SKU$'
+      become: True
+    - name : enable the required repositories
       shell: |
-        subscription-manager unregister || true
-        subscription-manager register --username={{ rhsm_login }} --password={{ rhsm_password }}
-        subscription-manager attach --pool 8a85f981568e999d01568ed222cd6712
         subscription-manager repos --disable=* --enable=rhel-7-server-rpms --enable=rhel-7-server-optional-rpms --enable=rhel-7-server-extras-rpms
       become: True
 
