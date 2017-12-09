@@ -1,5 +1,5 @@
 # Until https://review.openstack.org/#/c/526431/ is merged
-git+https://github.com/goneri/tripleo-quickstart-extra/#egg=tripleo-quickstart-extra
+git+https://github.com/goneri/tripleo-quickstart-extras/#egg=tripleo-quickstart-extra
 git+https://github.com/goneri/tripleo-quickstart-dci/#egg=tripleo-quickstart-dci
 # This is required for internal RHOSP deployments of TripleO when using TripleO Quickstart
 git+https://git.openstack.org/openstack/tripleo-quickstart/#egg=tripleo-quickstart

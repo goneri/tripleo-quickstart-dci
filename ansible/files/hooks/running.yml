@@ -3,7 +3,7 @@
     set -o pipefail
     . /home/cloud-user/openrc.sh
     cd /home/cloud-user
-    bash quickstart.sh --bootstrap --working-dir /home/cloud-user/.quickstart/ --tags all --config /home/cloud-user/.quickstart/config/general_config/ovb-minimal-pacemaker-public-bond.yml --environment /home/cloud-user/.quickstart/config/environments/rdocloud.yml --extra-vars cleanup_stacks_keypairs=true --playbook baremetal-full-deploy.yml --release rhos-baseos-undercloud-dci -e @/home/cloud-user/.quickstart/config/release/rhos-baseos-undercloud-dci.yml -e @/etc/dci-ansible-agent/settings.yml localhost 2>&1|tee /home/cloud-user/run.log
+    bash quickstart.sh --bootstrap --requirements /home/cloud-user/internal-requirements.txt --working-dir /home/cloud-user/.quickstart/ --tags all --config /home/cloud-user/.quickstart/config/general_config/ovb-minimal-pacemaker-public-bond.yml --environment /home/cloud-user/.quickstart/config/environments/rdocloud.yml --extra-vars cleanup_stacks_keypairs=true --playbook baremetal-full-deploy.yml --release rhos-baseos-undercloud-dci -e @/home/cloud-user/.quickstart/config/release/rhos-baseos-undercloud-dci.yml -e @/etc/dci-ansible-agent/settings.yml localhost 2>&1|tee /home/cloud-user/run.log
   become: True
   become_user: cloud-user
 - name: install Python shade module

@@ -246,16 +246,9 @@
         dest: /var/www/html/rhel-guest-image.x86_64.qcow2
       become: yes
     - copy:
-        src: 'internal-requirements.txt'
-        dest: '/var/lib/dci-ansible-agent/internal-requirements.txt'
-      become: yes
-      become_user: dci-ansible-agent
+        src: internal-requirements.txt
+        dest: ~/internal-requirements.txt
     - command: bash /home/cloud-user/quickstart.sh --install-deps
-      become: yes
-    - command: bash quickstart.sh --requirements /var/lib/dci-ansible-agent/internal-requirements.txt
-      become: yes
-      become_user: cloud-user
-      failed_when: False
 
 - name: extra settings to make he environment more friendly
   hosts: jumpbox
