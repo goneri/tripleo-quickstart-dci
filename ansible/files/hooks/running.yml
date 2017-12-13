@@ -18,7 +18,7 @@
     name: "undercloud"
     groups: "undercloud"
     ansible_fqdn: "{{ undercloud_ip }}"
-    ansible_user: "cloud-user"
+    ansible_user: "stack"
     ansible_host: "{{ undercloud_ip }}"
 - name: Create stack@undercloud SSH key
   user:
