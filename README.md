@@ -7,6 +7,7 @@ This is an example of an integration of Distributed-CI and TripleO-Quickstart.
 - to be on Red Hat VPN.
 - RDO-Cloud openrc file should be sourced first
 - in ansible/hosts, the jumpbox should have a floating IP from the user tenant
+- a valide RHSM credential and a pool ID with the rhel-7-server-cert-rpms channel
 
 ## Usage
 
@@ -39,7 +40,7 @@ vim hosts
 
 Finally you can start the deployment:
 ```
-ansible-playbook -i hosts -e rhsm_login=XXXX -e rhsm_password=XXXX bootstrap.yml
+ansible-playbook -i hosts -e rhsm_login=XXXX -e rhsm_password=XXXX -e rhsm_pool_id bootstrap.yml
 ```
 
 ## Workflow
@@ -74,5 +75,5 @@ The `rpm_to_gate` parameter can be used to inject a local RPM on the jumpbox. In
 instead of the RPM from the upstream repository:
 
 ```bash
-ansible-playbook -i hosts -e rhsm_login=XXXX -e rhsm_password=XXXX bootstrap.yml -e rpm_to_gate=/tmp/dci-ansible.rpm
+ansible-playbook -i hosts -e rhsm_login=XXXX -e rhsm_password=XXXX -e rhsm_pool_id bootstrap.yml -e rpm_to_gate=/tmp/dci-ansible.rpm
 ```

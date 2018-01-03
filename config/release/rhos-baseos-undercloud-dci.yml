@@ -37,13 +37,15 @@ repos:
     down_url: '{{ dci_baseurl }}/dci_repo/dci_repo.repo'
 
 use_rhsm: true
-pool_id: 8a85f981568e999d01568ed222cd6712
+# Reuse the local system pool id by default
+pool_id: "{{ lookup('pipe','sudo subscription-manager list --consumed --pool-only') }}"
 rhsm_username: "{{ rhsm_login }}"
 rhsm_password: "{{ rhsm_password }}"
 rhsm_repos:
   - name: rhel-{{ rhel_version_number }}-server-rpms
   - name: rhel-{{ rhel_version_number }}-server-extras-rpms
   - name: rhel-{{ rhel_version_number }}-server-rh-common-rpms
+  - name: rhel-{{ rhel_version_number }}-server-cert-rpms
 
 repo_cmd_before: |
   subscription-manager remove --all || true

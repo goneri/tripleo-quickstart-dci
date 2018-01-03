@@ -71,11 +71,11 @@
         state: present
         username: '{{ rhsm_login }}'
         password: '{{ rhsm_password }}'
-        pool: '^Employee SKU$'
+        pool_ids: ['{{ rhsm_pool_id }}']
       become: True
     - name : enable the required repositories
       shell: |
-        subscription-manager repos --disable=* --enable=rhel-7-server-rpms --enable=rhel-7-server-optional-rpms --enable=rhel-7-server-extras-rpms
+        subscription-manager repos --disable=* --enable=rhel-7-server-rpms --enable=rhel-7-server-optional-rpms --enable=rhel-7-server-extras-rpms --enable=rhel-7-server-cert-rpms
       become: True
 
 - name: prepare the jumpbox
