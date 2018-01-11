@@ -38,6 +38,11 @@ IP addresses should come from your tenant floating IP pool:
 vim hosts
 ```
 
+Import the RHEL image, if it's missing:
+```
+openstack image create --file ~/rhel-guest-image-7.3-35.x86_64.qcow2 --container-format bare --disk-format qcow2 "RHEL 7.3-35"
+```
+
 Finally you can start the deployment:
 ```
 ansible-playbook -i hosts -e rhsm_login=XXXX -e rhsm_password=XXXX -e rhsm_pool_id bootstrap.yml
